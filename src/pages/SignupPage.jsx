@@ -1,8 +1,12 @@
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import InputRHF from "../components/input/InputRHF";
+import { useForm } from "react-hook-form";
+import { createContext, useState } from "react";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { ToastContainer, toast } from "react-toastify";
+
+import Label from "../components/input/Label";
+import Input from "../components/input/Input";
+import Button from "../components/button/Button";
 
 const schemaValidate = yup.object({
   fullname: yup.string().required(),
@@ -10,41 +14,55 @@ const schemaValidate = yup.object({
   password: yup.string().required(),
 });
 
+const signupContext = createContext();
+
+const ContextProvider = (props) => {
+  return <signupContext.Provider value={{ ...props }}></signupContext.Provider>;
+};
+
 const SignupPage = () => {
+  const [show, setShow] = useState(false);
+
   const {
     handleSubmit,
     watch,
     control,
     getValues,
     reset,
-    formState: { errors, isLoading, isSubmitSuccessful },
+    formState: { errors, isSubmitting },
   } = useForm({
     resolver: yupResolver(schemaValidate),
     defaultValues: { fullname: "", email: "", password: "" },
   });
 
-  const initialProps = (name, label, placeholder, control) => {
-    return {
-      name: name,
-      label: label,
-      placeholder: placeholder,
-      control: control,
-    };
-  };
-
   const onSubmit = () => {
-    console.log("ok");
-    console.log(getValues());
+    console.log("submit: >>>" + getValues());
     reset({ fullname: "", email: "", password: "" });
-    notify();
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        toast.success("Sign in successfully, now! Sign up to continue");
+        resolve("fullfiled");
+      }, 5000);
+    });
   };
 
   const onError = (errors) => {
     console.log("❌ Submit thất bại, có lỗi:", errors);
+    if (errors?.fullname?.message) {
+      toast.error(errors?.fullname?.message);
+    }
+    if (errors?.email?.message) {
+      toast.error(errors?.email?.message);
+    }
+    if (errors?.password?.message) {
+      toast.error(errors?.password?.message);
+    }
   };
+  console.log(isSubmitting);
 
   return (
-    <div className="max-w-[800px] w-full mx-auto mt-5">
+    <div className="max-w-[620px] px-5 w-full mx-auto mt-5">
       <div>
         <img className="mx-auto" srcSet="/monkey.svg" alt="" />
         <h2 className="text-[#2EBAC1] text-center font-semibold text-[40px]">
@@ -56,54 +74,47 @@ const SignupPage = () => {
         action=""
         autoComplete="off"
       >
-        <div className="flex flex-col mb-[30px]">
-          <InputRHF
+        <div className="flex flex-col mb-[20px]">
+          <Label htmlFor={"fullname"}>Fullname</Label>
+          <Input
             autoFocus
-            {...initialProps(
-              "fullname",
-              "Fullname",
-              "Enter your fullname!",
-              control
-            )}
+            {...{
+              name: "fullname",
+              placeholder: "Enter your full name",
+              type: "text",
+              control,
+            }}
           />
-          <span>{errors.fullname?.message}</span>
         </div>
-        <div className="flex flex-col mb-[30px]">
-          <InputRHF
-            {...initialProps(
-              "email",
-              "Email address",
-              "Enter your email address!",
-              control
-            )}
+        <div className="flex flex-col mb-[20px]">
+          <Label htmlFor={"email"}>Email address</Label>
+          <Input
+            {...{
+              name: "email",
+              placeholder: "Enter your email address",
+              type: "text",
+              control,
+            }}
           />
-          <span>{errors.email?.message}</span>
         </div>
-        <div className="flex flex-col mb-[30px]">
-          <InputRHF
-            {...initialProps(
-              "password",
-              "Password",
-              "Enter your password!",
-              control
-            )}
+        <div className="flex flex-col mb-[20px]">
+          <Label htmlFor={"password"}>Password</Label>
+          <Input
+            show={show}
+            setShow={setShow}
+            {...{
+              name: "password",
+              placeholder: "Enter your password",
+              type: "password",
+              control,
+            }}
           />
-          <span>{errors.password?.message}</span>
         </div>
-        <button
-          className={`block bg-gradient-to-r from-[#00A7B4] via-[#A4D96C] to-[#A4D96C] 
-            mx-auto min-w-[343px] py-[20px] rounded-lg cursor-pointer font-semibold text-[24px] text-white`}
-        >
-          Sign Up
-        </button>
-        <ToastContainer />
+        <Button loading={isSubmitting}>Sign Up</Button>
       </form>
+      <ToastContainer />
     </div>
   );
 };
-
-function notify() {
-  toast("Sign in successfully, now! Sign up to continue");
-}
 
 export default SignupPage;
