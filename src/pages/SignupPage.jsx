@@ -1,12 +1,21 @@
 import * as yup from "yup";
 import { useForm } from "react-hook-form";
-import { createContext, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { ToastContainer, toast } from "react-toastify";
+
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+import { addDoc, collection, getDocs } from "firebase/firestore";
 
 import Label from "../components/input/Label";
 import Input from "../components/input/Input";
 import Button from "../components/button/Button";
+import { auth, db } from "../firebase/firebaseConfig";
+import { useNavigate } from "react-router-dom";
 
 const schemaValidate = yup.object({
   fullname: yup.string().required(),
@@ -21,6 +30,7 @@ const ContextProvider = (props) => {
 };
 
 const SignupPage = () => {
+  const navigate = useNavigate();
   const [show, setShow] = useState(false);
 
   const {
@@ -35,16 +45,38 @@ const SignupPage = () => {
     defaultValues: { fullname: "", email: "", password: "" },
   });
 
-  const onSubmit = () => {
+  const onSubmit = async (values) => {
     console.log("submit: >>>" + getValues());
-    reset({ fullname: "", email: "", password: "" });
+    const { fullname, email, password } = getValues();
+    try {
+      const userCridential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        toast.success("Sign in successfully, now! Sign up to continue");
-        resolve("fullfiled");
-      }, 5000);
-    });
+      await updateProfile(auth.currentUser, {
+        displayName: fullname,
+        photoURL: "",
+      });
+      const { operationType, providerId, user, _tokenResponse } =
+        userCridential;
+
+      const userCol = collection(db, "users"); // ✅ modular API
+
+      const userDoc = await addDoc(userCol, {
+        fullname,
+        email,
+        password,
+      });
+      
+      console.log(userCridential);
+      navigate("/", { state: { toast: "success" } });
+    } catch (error) {
+      toast.error("user already in use!");
+      console.log("user already in use! >>> ", error);
+    }
+    // reset({ fullname: "", email: "", password: "" });
   };
 
   const onError = (errors) => {
@@ -59,7 +91,6 @@ const SignupPage = () => {
       toast.error(errors?.password?.message);
     }
   };
-  console.log(isSubmitting);
 
   return (
     <div className="max-w-[620px] px-5 w-full mx-auto mt-5">
@@ -112,7 +143,7 @@ const SignupPage = () => {
         </div>
         <Button loading={isSubmitting}>Sign Up</Button>
       </form>
-      <ToastContainer />
+      <ToastContainer pauseOnHover={false} />
     </div>
   );
 };

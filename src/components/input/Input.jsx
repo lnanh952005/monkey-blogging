@@ -20,6 +20,7 @@ const Input = ({
         {...props}
         id={name}
         type={show ? "text" : type}
+        autoComplete={type == 'password' ? "off" : ""}
         className="w-full border border-white rounded-lg focus:border-[#00B4AA] bg-[#E7ECF3] focus:bg-white transition-all outline-none pl-5 pr-8 py-4"
       />
       {type == "password" && (
